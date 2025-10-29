@@ -1,0 +1,75 @@
+import React, { useState } from "react";
+import BookCard from "./components/BookCard";
+
+export default function App() {
+  const [query, setQuery] = useState("");
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchBooks = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) {
+      setError("Please enter a book title.");
+      setBooks([]);
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `https://openlibrary.org/search.json?title=${encodeURIComponent(
+          query
+        )}&limit=20`
+      );
+      const data = await res.json();
+      if (data.docs && data.docs.length > 0) {
+        setBooks(data.docs);
+      } else {
+        setBooks([]);
+        setError("No books found.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">Book Finder</h1>
+        <p className="text-slate-600 mb-6">
+          Search books by title (Open Library) — Candidate ID:{" "}
+          <span className="font-semibold">Naukri1025</span>
+        </p>
+
+        <form onSubmit={fetchBooks} className="flex gap-2 mb-4">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Enter a book title..."
+            className="flex-1 px-3 py-2 border rounded-md focus:ring focus:ring-sky-400"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700"
+          >
+            Search
+          </button>
+        </form>
+
+        {loading && <p>Loading...</p>}
+        {error && <p className="text-red-600">{error}</p>}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {books.map((book) => (
+            <BookCard key={book.key} book={book} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
